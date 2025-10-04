@@ -230,10 +230,10 @@ const Map: React.FC<MapProps> = ({ onMapClick, mapStyle, targetCoordinates }) =>
       const intersects = raycaster.intersectObject(earthMesh);
       if (intersects.length > 0) {
         const localPoint = earthMesh.worldToLocal(intersects[0].point.clone());
-        const lat = 90 - (Math.acos(localPoint.y / 1.0) * 180 / Math.PI); // 1.0 is radius
-        const lng = (180 - (Math.atan2(localPoint.z, localPoint.x) * 180 / Math.PI));
+        const lat = 90 - (Math.acos(localPoint.y) * 180 / Math.PI); // Assuming radius is 1
+        const lng = Math.atan2(localPoint.x, localPoint.z) * 180 / Math.PI;
 
-        onMapClickRef.current(event.clientX, event.clientY, lat, lng > 180 ? lng - 360: lng);
+        onMapClickRef.current(event.clientX, event.clientY, lat, lng);
       }
     };
 

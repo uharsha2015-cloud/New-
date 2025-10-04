@@ -42,8 +42,20 @@ const App: React.FC = () => {
   const refreshIntervalRef = useRef<number | null>(null);
   const debounceTimeoutRef = useRef<number | null>(null);
 
+  const handleError = (error: any, context: 'data' | 'search', locationName?: string): string => {
+    console.error(`Error during ${context} process for "${locationName || 'click'}":`, error);
+    
+    const baseMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+    if (context === 'data') {
+        return `Failed to load data: ${baseMessage}`;
+    } else {
+        return `Search failed for "${locationName}": ${baseMessage}`;
+    }
+  };
+
+
   const fetchData = useCallback(async (lat: number, lng: number, clickX: number, clickY: number) => {
-    setIsApiLoading(true); // Take control of the API lock
+    setIsApiLoading(true);
     setPopupInfo({
       x: clickX,
       y: clickY,
@@ -66,11 +78,22 @@ const App: React.FC = () => {
 
       setPopupInfo(prev => prev ? { ...prev, data, locationName: location, loading: false } : null);
     } catch (error) {
-      console.error('Failed to fetch data:', error);
-      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
-      setPopupInfo(prev => prev ? { ...prev, error: `Failed to load data: ${errorMessage}`, loading: false } : null);
+      const errorMessage = handleError(error, 'data');
+      setPopupInfo(prev => {
+        if (!prev) return null;
+        
+        const finalLocationName = prev.locationName === 'Fetching location...' ? 'Unknown Location' : prev.locationName;
+
+        return {
+          ...prev,
+          data: null,
+          loading: false,
+          error: errorMessage,
+          locationName: finalLocationName,
+        };
+      });
     } finally {
-        setIsApiLoading(false); // Always release the API lock
+        setIsApiLoading(false);
     }
   }, [activeLayer]);
 
@@ -81,7 +104,6 @@ const App: React.FC = () => {
     lat: number,
     lng: number
   ) => {
-    // Prevent new request if one is already loading
     if (isApiLoading) return;
 
     if (debounceTimeoutRef.current) {
@@ -139,10 +161,10 @@ const App: React.FC = () => {
   };
   
   const handleSearch = async (location: string) => {
-    if (isApiLoading) return; // Guard against concurrent requests
+    if (isApiLoading) return;
 
-    setIsApiLoading(true); // Lock the API for the entire search operation
-    setPopupInfo(null); // Close any existing popup
+    setIsApiLoading(true);
+    setPopupInfo(null);
     try {
       const coords = await geocodeLocation(location);
       if (coords) {
@@ -152,26 +174,25 @@ const App: React.FC = () => {
         const clickY = window.innerHeight / 2;
         
         setLastClickedInfo({ ...coords, clickX, clickY });
-        // Hand over to fetchData, which will manage the loading state from here
         await fetchData(coords.lat, coords.lng, clickX, clickY);
       } else {
-          // This case might not be reachable if geocodeLocation always throws on failure
           throw new Error("Location could not be found.");
       }
     } catch (error: any) {
-        console.error("Geocoding failed:", error);
+        const errorMessage = handleError(error, 'search', location);
         setPopupInfo({
              x: window.innerWidth / 2,
              y: window.innerHeight / 2,
              data: null,
              loading: false,
-             locationName: `Search failed for "${location}"`,
-             error: error.message || "Please try a different location name.",
+             locationName: 'Search Failed',
+             error: errorMessage,
         });
-        setIsApiLoading(false); // Release the lock if geocoding fails
+    } finally {
+        setIsApiLoading(false);
     }
   };
-
+  
   return (
     <div className="flex flex-col h-screen bg-transparent text-gray-200 font-sans overflow-hidden">
       <Header onSearch={handleSearch} isSearching={isApiLoading} />

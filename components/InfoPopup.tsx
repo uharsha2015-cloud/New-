@@ -55,7 +55,7 @@ const InfoPopup: React.FC<InfoPopupProps> = ({
       <div className="flex justify-between items-center mb-3 pb-3 border-b border-gray-700">
         <div className="flex items-center">
             {layerIcon && <div className="text-blue-400">{layerIcon}</div>}
-            <h3 className="font-bold text-lg">{layerName} Data</h3>
+            <h3 className="font-bold text-lg">{`${layerName} Data`}</h3>
         </div>
         <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors text-2xl leading-none">&times;</button>
       </div>
@@ -68,7 +68,7 @@ const InfoPopup: React.FC<InfoPopupProps> = ({
         {loading && (
             <div className="flex items-center justify-center p-4">
                 <div className="w-6 h-6 border-4 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
-                <p className="ml-3">Fetching real-time data...</p>
+                <p className="ml-3">Fetching NASA data...</p>
             </div>
         )}
         
@@ -79,11 +79,13 @@ const InfoPopup: React.FC<InfoPopupProps> = ({
           </div>
         )}
         
-        {data && !loading && (
-          <div className="bg-black bg-opacity-20 p-3 rounded-md space-y-2">
-            {data.split('\n').map((line, index) => (
-                <p key={index}>{line}</p>
-            ))}
+        {data && !loading && !error && (
+          <div className="bg-black bg-opacity-20 p-3 rounded-md">
+            <div className="space-y-2 whitespace-pre-wrap">
+              {data.split('\n').map((line, index) => (
+                  <p key={index}>{line}</p>
+              ))}
+            </div>
           </div>
         )}
       </div>
