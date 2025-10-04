@@ -1,0 +1,5 @@
+{
+  "name": "Terra Map",
+  "description": "An interactive map application powered by Gemini, allowing users to explore various real-time Earth observation data layers like temperature, humidity, and wind.",
+  "requestFramePermissions": []
+}
